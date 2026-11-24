@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Marseille — 111 quartiers</title>
+  </head>
+  <body>
+    <div id="map"></div>
+    <aside id="layers-panel" aria-label="Calques"></aside>
+    <aside id="info-panel" class="panel" hidden aria-live="polite">
+      <h2 id="info-name"></h2>
+      <p id="info-arr"></p>
+      <ul id="info-iris"></ul>
+    </aside>
+    <div id="data-source">
+      <a
+        href="https://geoservices.ign.fr/contoursiris"
+        target="_blank"
+        rel="noreferrer"
+        title="Contours IRIS — IGN / INSEE"
+        >Données</a>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
