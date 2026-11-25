@@ -51,6 +51,8 @@ import {
   mountLayersControl,
   ROAD_LABEL_LAYER,
 } from "./layers-control.ts";
+import { STYLE_URL, rewriteOpenFreeMapUrl } from "./basemap.ts";
+import { MAP_MAX_BOUNDS, minZoomToFitBounds } from "./map-bounds.ts";
 
 setWorkerUrl(maplibreWorker);
 
@@ -60,7 +62,6 @@ type IrisLineCollection = FeatureCollection<LineString | MultiLineString>;
 type ArrIndex = FeatureCollection<Point, ArrProps>;
 const EMPTY_FC: FeatureCollection = { type: "FeatureCollection", features: [] };
 
-const STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
 const LABEL_FONT = ["Noto Sans Regular"];
 const OUR_SYMBOLS = new Set([
   "arrondissement-label",
@@ -457,6 +458,17 @@ async function loadJson<T>(path: string): Promise<T> {
   return response.json();
 }
 
+function lockMinZoom(map: MlMap, shouldResize = false): void {
+  if (shouldResize) map.resize();
+  const box = map.getContainer();
+  const fitted = map.cameraForBounds(MAP_MAX_BOUNDS, { padding: 0 });
+  const minZoom =
+    fitted?.zoom ??
+    minZoomToFitBounds(MAP_MAX_BOUNDS, box.clientWidth, box.clientHeight);
+  map.setMinZoom(minZoom);
+  if (map.getZoom() < minZoom) map.setZoom(minZoom);
+}
+
 async function boot(): Promise<void> {
   const map = new MlMap({
     container: "map",
@@ -465,13 +477,11 @@ async function boot(): Promise<void> {
     zoom: 11.2,
     minZoom: 10,
     maxZoom: 16,
-    maxBounds: [
-      [5.18, 43.14],
-      [5.58, 43.43],
-    ],
+    maxBounds: MAP_MAX_BOUNDS,
     hash: true,
     locale: FR_LOCALE,
     attributionControl: false,
+    transformRequest: (url) => ({ url: rewriteOpenFreeMapUrl(url) }),
   });
 
   map.addControl(new AttributionControl({ compact: true }), "bottom-right");
@@ -484,6 +494,16 @@ async function boot(): Promise<void> {
       trackUserLocation: false,
     }),
     "top-right",
+  );
+
+  map.on("load", () => lockMinZoom(map, true));
+  map.on("resize", () => lockMinZoom(map));
+  window.addEventListener("pageshow", () => lockMinZoom(map, true));
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") lockMinZoom(map, true);
+  });
+  map.getCanvas().addEventListener("webglcontextrestored", () =>
+    lockMinZoom(map, true),
   );
 
   const onStyleReady = async (): Promise<void> => {

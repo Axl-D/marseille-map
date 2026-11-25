@@ -1,4 +1,10 @@
 {
+  "rewrites": [
+    {
+      "source": "/basemap/:path*",
+      "destination": "https://tiles.openfreemap.org/:path*"
+    }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)",
